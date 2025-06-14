@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: e-nagarpalika-frontend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run preview
+    envVars:
+      - key: VITE_API_URL
+        value: https://e-nagarpalika-backend.onrender.com
+      - key: NODE_ENV
+        value: production 
