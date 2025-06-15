@@ -64,15 +64,15 @@ const Login = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-              Username
+              Email
             </label>
             <input
-              type="text"
+              type="email"
               className="form-input"
               value={credentials.username}
               onChange={(e) => setCredentials({...credentials, username: e.target.value})}
               disabled={loading}
-              placeholder="Enter your username"
+              placeholder="Enter your Email"
             />
           </div>
 
