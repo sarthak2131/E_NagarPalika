@@ -38,8 +38,6 @@ app.use((err, req, res, next) => {
 
 // Connect to MongoDB with proper options
 mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
 }).then(() => {
