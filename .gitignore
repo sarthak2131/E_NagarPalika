@@ -56,4 +56,12 @@ Thumbs.db
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local 
+.env.production.local
+
+# Additional directories to ignore
+/frontend/
+/backend/
+
+# Additional directories to ignore
+/frontend/
+/backend/ 
