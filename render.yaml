@@ -1,26 +1,29 @@
 services:
-  # Backend service
+  # Backend Service
   - type: web
     name: e-nagarpalika-backend
     env: node
-    buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    rootDir: e-nagarpalika-backend
+    buildCommand: npm install
+    startCommand: node index.js
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: NODE_ENV
-        value: production
+      - key: FRONTEND_URL
+        sync: false
 
-  # Frontend service
-  - type: web
+  # Frontend Service
+  - type: static
     name: e-nagarpalika-frontend
-    env: node
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm run preview
+    rootDir: e-nagarpalika-frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        value: https://e-nagarpalika-backend.onrender.com
-      - key: NODE_ENV
+        sync: false
+      - key: VITE_NODE_ENV
         value: production 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import axios from 'axios'
+import { endpoints } from '../config/api'
 
 const SuccessModal = ({ ticketNo, onClose }) => {
   return (
@@ -84,7 +85,7 @@ const Form = () => {
 
     setIsSubmitting(true)
     try {
-      const response = await axios.post('http://localhost:5000/api/applications', formData)
+      const response = await axios.post(endpoints.applications.create, formData)
       setSubmissionSuccess(response.data.ticketNo)
       setFormData({
         ticketNo: '',

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import { Search, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { endpoints } from '../config/api'
 
 const StatusBadge = ({ status }) => {
   const statusConfig = {
@@ -136,7 +137,7 @@ const TrackStatus = () => {
     setLoading(true)
     setError('')
     try {
-      const response = await axios.get(`http://localhost:5000/api/applications/track?query=${searchQuery}`)
+      const response = await axios.get(`${endpoints.applications.track}?query=${searchQuery}`)
       setApplication(response.data)
     } catch (error) {
       setError('Application not found. Please check the Ticket No. or Email ID')

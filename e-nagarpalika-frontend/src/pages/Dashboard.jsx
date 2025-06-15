@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { Loader2, Search, Filter, Eye, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { endpoints } from '../config/api'
 
 // Status Badge Component
 const StatusBadge = ({ status }) => {
@@ -268,7 +269,7 @@ const Dashboard = () => {
     setError(null)
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/applications?status=${filter}`,
+        `${endpoints.applications.getAll}?status=${filter}`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -292,7 +293,7 @@ const Dashboard = () => {
   const handleAction = async (id, action, remarks = '') => {
     try {
       await axios.put(
-        `http://localhost:5000/api/applications/${id}`,
+        endpoints.applications.update(id),
         { action, remarks },
         { headers: { Authorization: `Bearer ${token}` } }
       )
