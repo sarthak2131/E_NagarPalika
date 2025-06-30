@@ -1,0 +1,80 @@
+[
+  {
+    "username": "akshatjain070705@gmail.com",
+    "password": "Employee1@2024",
+    "role": "Employee",
+    "ulbCode": "ULB001",
+    "userId": "EMPUSER001",
+    "employeeName": "Akshat Jain",
+    "employeeCode": "EMP001",
+    "designation": "Clerk",
+    "mobile": "9876543210",
+    "email": "akshatjain070705@gmail.com",
+    "section": "Accounts"
+  },
+  {
+    "username": "kratikjain794@gmail.com",
+    "password": "Employee2@2024",
+    "role": "Employee",
+    "ulbCode": "ULB002",
+    "userId": "EMPUSER002",
+    "employeeName": "Kratik Jain",
+    "employeeCode": "EMP002",
+    "designation": "Data Entry Operator",
+    "mobile": "9123456780",
+    "email": "kratikjain794@gmail.com",
+    "section": "IT"
+  },
+  {
+    "username": "employee3@nagnigamit.gov.in",
+    "password": "Employee3@2024",
+    "role": "Employee",
+    "ulbCode": "ULB003",
+    "userId": "EMPUSER003",
+    "employeeName": "Rahul Verma",
+    "employeeCode": "EMP003",
+    "designation": "Junior Assistant",
+    "mobile": "9988776655",
+    "email": "employee3@nagnigamit.gov.in",
+    "section": "HR"
+  },
+  {
+    "username": "itassistant@nagnigamit.gov.in",
+    "password": "ITAssistant@2024",
+    "role": "ITAssistant",
+    "ulbCode": "ULB010",
+    "userId": "ITASSIST001",
+    "employeeName": "Sunil Kumar",
+    "employeeCode": "ITA001",
+    "designation": "IT Assistant",
+    "mobile": "9001122334",
+    "email": "itassistant@nagnigamit.gov.in",
+    "section": "IT"
+  },
+  {
+    "username": "itofficer@nagnigamit.gov.in",
+    "password": "ITOfficer@2024",
+    "role": "ITOfficer",
+    "ulbCode": "ULB020",
+    "userId": "ITOFFICER001",
+    "employeeName": "Meena Joshi",
+    "employeeCode": "ITO001",
+    "designation": "IT Officer",
+    "mobile": "9002233445",
+    "email": "itofficer@nagnigamit.gov.in",
+    "section": "IT"
+  },
+  {
+    "username": "ithead@nagnigamit.gov.in",
+    "password": "ITHead@2024",
+    "role": "ITHead",
+    "ulbCode": "ULB030",
+    "userId": "ITHEAD001",
+    "employeeName": "Rajeev Bansal",
+    "employeeCode": "ITH001",
+    "designation": "IT Head",
+    "mobile": "9003344556",
+    "email": "ithead@nagnigamit.gov.in",
+    "section": "IT"
+  }
+] 

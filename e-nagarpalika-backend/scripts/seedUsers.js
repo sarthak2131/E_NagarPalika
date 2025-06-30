@@ -2,25 +2,21 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import User from '../models/User.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load Employee users from sampleUsers.json
+const sampleUsersPath = path.resolve(__dirname, 'sampleUsers.json');
+const employeeUsers = JSON.parse(fs.readFileSync(sampleUsersPath, 'utf-8'));
+
 const users = [
-  {
-    username: 'cmo@nagarpalika.gov.in',
-    password: 'Cmo@2024',
-    role: 'CMO'
-  },
-  {
-    username: 'nodal@nagarpalika.gov.in',
-    password: 'Nodal@2024',
-    role: 'NodalOfficer'
-  },
-  {
-    username: 'commissioner@nagarpalika.gov.in',
-    password: 'Commissioner@2024',
-    role: 'Commissioner'
-  }
+  ...employeeUsers
 ];
 
 const seedUsers = async () => {
@@ -28,7 +24,19 @@ const seedUsers = async () => {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
 
-    // Clear existing users
+    // Drop users collection if it exists
+    try {
+      await mongoose.connection.collection('users').drop();
+      console.log('Dropped users collection');
+    } catch (err) {
+      if (err.code === 26) {
+        console.log('users collection does not exist, skipping drop');
+      } else {
+        throw err;
+      }
+    }
+
+    // Clear existing users (redundant, but safe)
     await User.deleteMany({});
     console.log('Cleared existing users');
 

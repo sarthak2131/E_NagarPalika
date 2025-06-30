@@ -6,6 +6,7 @@ import Form from './pages/Form'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import TrackStatus from './pages/TrackStatus'
+import Profile from './pages/Profile'
 import './index.css'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/track" element={<TrackStatus />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </div>
   )

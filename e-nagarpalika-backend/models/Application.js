@@ -13,7 +13,7 @@ const applicationSchema = new mongoose.Schema({
     type: String
   }],
   ulbCode: String,
-  userId: String,
+ 
   employeeName: String,
   employeeCode: String,
   designation: String,
@@ -21,6 +21,10 @@ const applicationSchema = new mongoose.Schema({
   email: String,
   section: String,
   tcodeList: String,
+  userId: {
+    type: String,
+    required: false
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
@@ -28,13 +32,28 @@ const applicationSchema = new mongoose.Schema({
   },
   currentLevel: {
     type: String,
-    enum: ['CMO', 'NodalOfficer', 'Commissioner', 'Completed'],
-    default: 'CMO'
+    enum: ['ITAssistant', 'ITOfficer', 'ITHead', 'Completed'],
+    default: 'ITAssistant'
   },
   previousLevels: [{
     type: String,
-    enum: ['CMO', 'NodalOfficer', 'Commissioner']
+    enum: ['ITAssistant', 'ITOfficer', 'ITHead']
   }],
+  ITAssistantApproved: {
+    type: Boolean,
+    default: false
+  },
+  ITAssistantApprovedBy: String,
+  ITOfficerApproved: {
+    type: Boolean,
+    default: false
+  },
+  ITOfficerApprovedBy: String,
+  ITHeadApproved: {
+    type: Boolean,
+    default: false
+  },
+  ITHeadApprovedBy: String,
   remarks: String,
   createdAt: {
     type: Date,

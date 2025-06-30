@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Search, Filter, Eye, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Loader2, Search, Filter, Eye, CheckCircle, XCircle, Clock, ListChecks, FileText } from 'lucide-react'
 import { endpoints } from '../config/api'
+
+const summaryColors = {
+  total: 'bg-gradient-to-r from-blue-400 to-blue-600',
+  pending: 'bg-gradient-to-r from-yellow-300 to-yellow-500',
+  approved: 'bg-gradient-to-r from-green-400 to-green-600',
+  rejected: 'bg-gradient-to-r from-red-400 to-red-600',
+}
 
 // Status Badge Component
 const StatusBadge = ({ status }) => {
-  const colors = {
-    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+  const config = {
+    pending: { color: 'bg-yellow-100 text-yellow-800', icon: <Clock size={16} className="mr-1" /> },
+    approved: { color: 'bg-green-100 text-green-800', icon: <CheckCircle size={16} className="mr-1" /> },
+    rejected: { color: 'bg-red-100 text-red-800', icon: <XCircle size={16} className="mr-1" /> },
   }
-
+  const c = config[status] || config.pending
   return (
-    <span className={`px-3 py-1 rounded-full text-sm font-medium ${colors[status]}`}>
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${c.color}`}>
+      {c.icon}
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   )
@@ -33,7 +41,7 @@ const formatDate = (dateString) => {
 }
 
 // View Application Modal
-const ViewModal = ({ application, onClose }) => {
+const ViewModal = ({ application, onClose, userRole }) => {
   if (!application) return null
 
   return (
@@ -60,10 +68,13 @@ const ViewModal = ({ application, onClose }) => {
             <div>
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Status</h3>
               <StatusBadge status={application.status} />
+              {application.statusMessage && (
+                <div className="mt-1 text-xs font-semibold text-blue-700 dark:text-blue-300">{application.statusMessage}</div>
+              )}
             </div>
             <div>
               <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Level</h3>
-              <p className="text-lg dark:text-white">{application.currentLevel}</p>
+              <p className="text-lg dark:text-white">{application.currentLevel.replace('IT', 'IT ').replace('Employee', 'Employee').toUpperCase()}</p>
             </div>
           </div>
 
@@ -143,7 +154,7 @@ const ViewModal = ({ application, onClose }) => {
           <div className="border-t dark:border-gray-700 pt-4">
             <h3 className="text-lg font-semibold mb-3 dark:text-white">Approval Flow</h3>
             <div className="space-y-2">
-              {['CMO', 'NodalOfficer', 'Commissioner'].map((level, index) => (
+              {['ITAssistant', 'ITOfficer', 'ITHead'].map((level, index) => (
                 <div key={level} className="flex items-center space-x-2">
                   <div className={`w-2 h-2 rounded-full ${
                     application.previousLevels.includes(level) 
@@ -159,12 +170,40 @@ const ViewModal = ({ application, onClose }) => {
                         ? 'font-medium text-green-600 dark:text-green-400'
                         : 'text-gray-500 dark:text-gray-400'
                   }`}>
-                    {level}
+                    {level.toUpperCase()}
                   </span>
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Action Buttons for Approve/Reject */}
+          {userRole && (
+            (userRole === 'ITHead' && application.status !== 'rejected' && application.currentLevel !== 'Completed') ||
+            (userRole === 'ITOfficer' && (application.currentLevel === 'ITAssistant' || application.currentLevel === 'ITOfficer') && application.status === 'pending') ||
+            (userRole === 'ITAssistant' && application.currentLevel === 'ITAssistant' && application.status === 'pending')
+          ) && (
+            <div className="flex justify-end gap-4 mt-6">
+              <button
+                onClick={() => {
+                  onClose();
+                  window.handleAction && window.handleAction(application._id, 'approve');
+                }}
+                className="px-6 py-2 rounded-full bg-green-600 text-white font-semibold shadow hover:bg-green-700 transition"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => {
+                  onClose();
+                  window.handleReject && window.handleReject(application._id);
+                }}
+                className="px-6 py-2 rounded-full bg-red-600 text-white font-semibold shadow hover:bg-red-700 transition"
+              >
+                Reject
+              </button>
+            </div>
+          )}
 
           {/* Remarks */}
           {application.remarks && (
@@ -244,8 +283,7 @@ const RejectModal = ({ onSubmit, onClose }) => {
 const Dashboard = () => {
   const navigate = useNavigate()
   const [applications, setApplications] = useState([])
-  const [filter, setFilter] = useState('pending')
-  const [sortOrder, setSortOrder] = useState('newest')
+  const [filter, setFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -262,18 +300,21 @@ const Dashboard = () => {
       return
     }
     fetchApplications()
-  }, [filter, token, navigate])
+    window.handleAction = handleAction;
+    window.handleReject = handleReject;
+    return () => {
+      window.handleAction = undefined;
+      window.handleReject = undefined;
+    }
+  }, [token])
 
   const fetchApplications = async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await axios.get(
-        `${endpoints.applications.getAll}?status=${filter}`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      )
+      const response = await axios.get(endpoints.applications.getAll, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       setApplications(response.data)
     } catch (error) {
       console.error('Error fetching applications:', error)
@@ -322,134 +363,127 @@ const Dashboard = () => {
     setRejectingApplicationId(null)
   }
 
-  const filteredAndSortedApplications = applications
-    .filter(app => 
+  // Summary counts
+  const summary = {
+    total: applications.length,
+    pending: applications.filter(a => a.status === 'pending').length,
+    approved: applications.filter(a => a.status === 'approved').length,
+    rejected: applications.filter(a => a.status === 'rejected').length,
+  }
+
+  // Filtered applications
+  const filteredApps = applications
+    .filter(app => {
+      if (filter === 'all') return true;
+      if (filter === 'final-approved') return app.status === 'approved' && app.currentLevel === 'Completed';
+      if (filter === 'partially-approved') return app.status === 'approved' && app.currentLevel !== 'Completed';
+      if (filter === 'pending') {
+        if (role === 'ITHead') {
+          return app.currentLevel === 'ITHead' && (app.status === 'pending' || app.status === 'approved');
+        }
+        return app.status === 'pending';
+      }
+      return app.status === filter;
+    })
+    .filter(app =>
       app.ticketNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.employeeCode.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      const dateA = new Date(a.createdAt)
-      const dateB = new Date(b.createdAt)
-      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB
-    })
+    );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 dark:text-white">Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400">Welcome, {role}</p>
+    <div className="max-w-7xl mx-auto px-4 py-10">
+      <h1 className="text-3xl font-bold mb-8 dark:text-white tracking-tight text-center">Dashboard</h1>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+        <SummaryCard label="Total" value={summary.total} icon={<ListChecks size={28} />} color={summaryColors.total} />
+        <SummaryCard label="Pending" value={summary.pending} icon={<Clock size={28} />} color={summaryColors.pending} />
+        <SummaryCard label="Approved" value={summary.approved} icon={<CheckCircle size={28} />} color={summaryColors.approved} />
+        <SummaryCard label="Rejected" value={summary.rejected} icon={<XCircle size={28} />} color={summaryColors.rejected} />
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 rounded-lg">
-          {error}
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div className="flex items-center gap-2">
+          <Filter size={20} className="text-gray-400" />
+          <select
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            className="form-input rounded-full bg-white/60 dark:bg-gray-900/70 border-none shadow text-gray-800 dark:text-white backdrop-blur-md"
+          >
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="final-approved">Final Approved</option>
+            <option value="partially-approved">Partially Approved</option>
+          </select>
         </div>
-      )}
-
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="     Search applications..."
-              className="form-input pl-10 dark:bg-gray-700 dark:border-gray-600 dark:text-white "
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Filter size={20} className="text-gray-400" />
-            <select 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="form-input dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Clock size={20} className="text-gray-400" />
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="form-input dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-            </select>
-          </div>
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search by Ticket, Name, or Code..."
+            className="form-input pl-10 rounded-full bg-white/60 dark:bg-gray-900/70 border-none shadow focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 transition text-gray-800 dark:text-white backdrop-blur-md w-full"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+          />
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="animate-spin text-gray-600 dark:text-gray-400" size={40} />
-        </div>
-      ) : filteredAndSortedApplications.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">No applications found</p>
-        </div>
-      ) : (
-        <div className="grid gap-6">
-          {filteredAndSortedApplications.map((app) => (
-            <div key={app._id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex flex-col md:flex-row justify-between">
-                <div className="space-y-2 mb-4 md:mb-0">
-                  <div className="flex items-center space-x-4">
-                    <h3 className="text-xl font-semibold dark:text-white">Ticket: {app.ticketNo}</h3>
-                    <StatusBadge status={app.status} />
+      {/* Application List */}
+      <div className="bg-white/60 dark:bg-gray-900/70 backdrop-blur-lg border border-white/40 dark:border-gray-700 rounded-2xl shadow-xl p-6">
+        {loading ? (
+          <div className="flex justify-center items-center h-40">
+            <Loader2 className="animate-spin text-blue-600 dark:text-blue-300" size={40} />
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-600 dark:text-red-400 py-8">{error}</div>
+        ) : filteredApps.length === 0 ? (
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8">No applications found.</div>
+        ) : (
+          <ul className="divide-y divide-gray-200 dark:divide-gray-800">
+            {filteredApps.map(app => (
+              <li key={app._id} className="flex flex-col md:flex-row md:items-center justify-between py-6 gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-300 to-blue-700 flex items-center justify-center text-white text-2xl font-bold shadow">
+                    <FileText size={28} />
                   </div>
-                  <p className="text-gray-600 dark:text-gray-400">Employee: {app.employeeName}</p>
-                  <p className="text-gray-600 dark:text-gray-400">Employee Code: {app.employeeCode}</p>
-                  <p className="text-gray-600 dark:text-gray-400">Current Level: {app.currentLevel}</p>
-                  <div className="flex items-center text-gray-500 dark:text-gray-400 text-sm">
-                    <Clock size={16} className="mr-1" />
-                    <span>{formatDate(app.createdAt)}</span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-lg dark:text-white">{app.ticketNo}</span>
+                      <StatusBadge status={app.status} />
+                    </div>
+                    {app.statusMessage && (
+                      <div className="mt-1 text-xs font-semibold text-blue-700 dark:text-blue-300">{app.statusMessage}</div>
+                    )}
+                    <div className="text-gray-600 dark:text-gray-300 text-sm">
+                      {app.employeeName} &bull; {app.employeeCode}
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex flex-col space-y-2">
-                  <button 
+                <div className="flex flex-col md:items-end gap-2">
+                  <div className="text-gray-500 dark:text-gray-400 text-xs mb-1">
+                    {new Date(app.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </div>
+                  <button
                     onClick={() => setSelectedApplication(app)}
-                    className="inline-flex items-center justify-center btn-secondary"
+                    className="rounded-full px-4 py-2 bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition"
                   >
-                    <Eye size={18} className="mr-2" />
                     View Details
                   </button>
-                  
-                  {app.currentLevel === role && app.status === 'pending' && (
-                    <>
-                      <button 
-                        onClick={() => handleAction(app._id, 'approve')}
-                        className="inline-flex items-center justify-center btn-primary"
-                      >
-                        <CheckCircle size={18} className="mr-2" />
-                        Approve
-                      </button>
-                      <button 
-                        onClick={() => handleReject(app._id)}
-                        className="inline-flex items-center justify-center btn-secondary"
-                      >
-                        <XCircle size={18} className="mr-2" />
-                        Reject
-                      </button>
-                    </>
-                  )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {selectedApplication && (
         <ViewModal 
           application={selectedApplication} 
           onClose={() => setSelectedApplication(null)} 
+          userRole={role}
         />
       )}
 
@@ -465,5 +499,13 @@ const Dashboard = () => {
     </div>
   )
 }
+
+const SummaryCard = ({ label, value, icon, color }) => (
+  <div className={`rounded-2xl shadow-xl p-6 flex flex-col items-center justify-center text-white ${color}`}>
+    <div className="mb-2">{icon}</div>
+    <div className="text-2xl font-bold">{value}</div>
+    <div className="text-sm font-medium tracking-wide">{label}</div>
+  </div>
+)
 
 export default Dashboard

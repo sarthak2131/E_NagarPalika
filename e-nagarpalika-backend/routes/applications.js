@@ -6,25 +6,23 @@ import { auth } from '../middleware/auth.js';
 const router = express.Router();
 
 // Create application
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     const ticketNo = 'TICKET-' + Date.now();
     const application = new Application({
       ...req.body,
       ticketNo,
       status: 'pending',
-      currentLevel: 'CMO'
+      currentLevel: 'ITAssistant',
+      previousLevels: [],
+      userId: req.user.username,
     });
-
     await application.save();
-    
-    // Send email notification
     await sendEmail(
       req.body.email,
       'Application Submitted',
       `Your application has been submitted successfully. Your ticket number is: ${ticketNo}`
     );
-
     res.status(201).json({ ticketNo });
   } catch (error) {
     console.error('Error creating application:', error);
@@ -36,80 +34,47 @@ router.post('/', async (req, res) => {
 router.get('/', auth, async (req, res) => {
   try {
     const { status } = req.query;
-    const { role } = req.user;
-
+    const { role, username } = req.user;
     let query = {};
-    
-    if (status === 'pending') {
-      // Show only pending applications for the current role level
-      query = { 
-        currentLevel: role,
-        status: 'pending'
-      };
+    if (['Employee', 'Clerk'].includes(role)) {
+      // Employee and Clerk see their own applications
+      query = { userId: username };
+    } else if (status === 'pending') {
+      // Show pending applications for ITAssistant, ITOfficer, ITHead
+      if (role === 'ITAssistant') {
+        query = { currentLevel: 'ITAssistant', status: 'pending' };
+      } else if (role === 'ITOfficer') {
+        query = { currentLevel: { $in: ['ITAssistant', 'ITOfficer'] }, status: 'pending' };
+      } else if (role === 'ITHead') {
+        query = { currentLevel: 'ITHead', status: { $in: ['pending', 'approved'] } };
+      }
     } else if (status === 'approved') {
-      // For approved applications, show those that have been approved by the current role
-      query = {
-        $or: [
-          { status: 'approved' },
-          {
-            status: 'pending',
-            currentLevel: { $ne: role },
-            $or: [
-              { previousLevels: role },
-              { 
-                currentLevel: {
-                  $in: role === 'CMO' ? ['NodalOfficer', 'Commissioner'] :
-                         role === 'NodalOfficer' ? ['Commissioner'] : []
-                }
-              }
-            ]
-          }
-        ]
-      };
+      query = { status: 'approved' };
+    } else if (status === 'fully-approved') {
+      query = { status: 'approved', currentLevel: 'Completed' };
+    } else if (status === 'partially-approved') {
+      query = { status: 'approved', currentLevel: { $ne: 'Completed' } };
     } else if (status === 'rejected') {
-      // Show rejected applications
       query = { status: 'rejected' };
     }
-
-    const applications = await Application.find(query)
-      .sort({ createdAt: -1 });
-
+    const applications = await Application.find(query).sort({ createdAt: -1 });
     // Add flow status information to each application
     const enrichedApplications = applications.map(app => {
       const flowStatus = {
-        CMO: 'pending',
-        NodalOfficer: 'pending',
-        Commissioner: 'pending'
+        ITAssistant: app.ITAssistantApproved ? 'approved' : 'pending',
+        ITOfficer: app.ITOfficerApproved ? 'approved' : 'pending',
+        ITHead: app.ITHeadApproved ? 'approved' : 'pending',
       };
-
       if (app.status === 'rejected') {
-        // If rejected, mark all subsequent levels as rejected
-        const levels = ['CMO', 'NodalOfficer', 'Commissioner'];
-        const currentIndex = levels.indexOf(app.currentLevel);
-        levels.forEach((level, index) => {
-          flowStatus[level] = index < currentIndex ? 'approved' : 
-                            index === currentIndex ? 'rejected' : 'pending';
-        });
-      } else {
-        // For pending/approved applications
-        const levels = ['CMO', 'NodalOfficer', 'Commissioner'];
-        const currentIndex = levels.indexOf(app.currentLevel);
-        levels.forEach((level, index) => {
-          if (index < currentIndex) {
-            flowStatus[level] = 'approved';
-          } else if (index === currentIndex) {
-            flowStatus[level] = app.status === 'approved' ? 'approved' : 'pending';
-          }
-          // Levels after current remain pending
+        Object.keys(flowStatus).forEach(level => {
+          flowStatus[level] = 'rejected';
         });
       }
-
       return {
         ...app.toObject(),
         flowStatus
       };
     });
-
     res.json(enrichedApplications);
   } catch (error) {
     console.error('Error fetching applications:', error);
@@ -139,44 +104,45 @@ router.get('/track', async (req, res) => {
   }
 });
 
-// Update application status
+// Update application status (approve/reject)
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { action, remarks } = req.body;
-    const { role } = req.user;
-
+    const { role, username } = req.user;
     const application = await Application.findById(id);
-
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
-
-    if (application.currentLevel !== role) {
-      return res.status(403).json({ 
-        message: 'You are not authorized to perform this action at the current level' 
-      });
-    }
-
-    let updateData = {
-      $set: {},
-      $push: { previousLevels: role }
-    };
-
+    // Approval logic for ITAssistant, ITOfficer, ITHead
+    let updateData = { $set: {}, $push: { previousLevels: role } };
     if (action === 'approve') {
-      switch (role) {
-        case 'CMO':
-          updateData.$set.currentLevel = 'NodalOfficer';
-          break;
-        case 'NodalOfficer':
-          updateData.$set.currentLevel = 'Commissioner';
-          break;
-        case 'Commissioner':
-          updateData.$set.currentLevel = 'Completed';
-          updateData.$set.status = 'approved';
-          break;
-        default:
-          return res.status(400).json({ message: 'Invalid role' });
+      if (role === 'ITHead' && (application.status === 'pending' || application.status === 'approved')) {
+        // ITHead can approve at any stage
+        updateData.$set.ITAssistantApproved = true;
+        updateData.$set.ITOfficerApproved = true;
+        updateData.$set.ITHeadApproved = true;
+        updateData.$set.ITHeadApprovedBy = username;
+        updateData.$set.currentLevel = 'Completed';
+        updateData.$set.status = 'approved';
+        updateData.$set.statusMessage = 'Final Approved by ITHead';
+      } else if (role === 'ITOfficer' && application.status === 'pending' && (application.currentLevel === 'ITAssistant' || application.currentLevel === 'ITOfficer')) {
+        // ITOfficer can approve at ITAssistant or ITOfficer stage
+        updateData.$set.ITAssistantApproved = true;
+        updateData.$set.ITOfficerApproved = true;
+        updateData.$set.ITOfficerApprovedBy = username;
+        updateData.$set.currentLevel = 'ITHead';
+        updateData.$set.status = 'pending';
+        updateData.$set.statusMessage = 'Forwarded to ITHead';
+      } else if (role === 'ITAssistant' && application.status === 'pending' && application.currentLevel === 'ITAssistant') {
+        // ITAssistant can approve only at their own stage
+        updateData.$set.ITAssistantApproved = true;
+        updateData.$set.ITAssistantApprovedBy = username;
+        updateData.$set.currentLevel = 'ITOfficer';
+        updateData.$set.status = 'approved';
+        updateData.$set.statusMessage = 'Forwarded to ITOfficer';
+      } else {
+        return res.status(403).json({ message: 'You are not authorized to approve at this level' });
       }
     } else if (action === 'reject') {
       updateData.$set = {
@@ -185,27 +151,20 @@ router.put('/:id', auth, async (req, res) => {
         remarks: remarks || 'Application rejected'
       };
     }
-
     const updatedApplication = await Application.findByIdAndUpdate(
       id,
       updateData,
       { new: true, runValidators: true }
     );
-
-    // Send email notification
     await sendEmail(
       application.email,
       'Application Status Updated',
       `Your application (${application.ticketNo}) has been ${action}ed by ${role}. ${remarks ? `Remarks: ${remarks}` : ''}`
     );
-
     res.json(updatedApplication);
   } catch (error) {
     console.error('Error updating application:', error);
-    res.status(500).json({ 
-      message: 'Server error updating application', 
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Server error updating application', error: error.message });
   }
 });
 

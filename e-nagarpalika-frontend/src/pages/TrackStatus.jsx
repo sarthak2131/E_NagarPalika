@@ -3,7 +3,15 @@ import axios from 'axios'
 import { Search, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { endpoints } from '../config/api'
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, currentLevel }) => {
+  if (status === 'pending' && ['ITAssistant', 'ITOfficer', 'ITHead'].includes(currentLevel)) {
+    return (
+      <span className="flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+        <Clock size={16} className="mr-1" />
+        Forwarded to {currentLevel.replace('IT', 'IT ').replace('Employee', 'Employee').toUpperCase()}
+      </span>
+    )
+  }
   const statusConfig = {
     pending: {
       color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
@@ -18,9 +26,7 @@ const StatusBadge = ({ status }) => {
       icon: <XCircle size={16} className="mr-1" />
     }
   }
-
   const config = statusConfig[status] || statusConfig.pending
-
   return (
     <span className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
       {config.icon}
@@ -41,50 +47,46 @@ const ApplicationDetails = ({ application }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-6">
-      <div className="flex justify-between items-start">
-        <h2 className="text-xl font-semibold dark:text-white">Application Details</h2>
-        <StatusBadge status={application.status} />
+    <div className="w-full max-w-3xl mx-auto bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg p-8 rounded-2xl shadow-xl space-y-8 border border-white/40 dark:border-gray-700">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+        <h2 className="text-2xl font-bold dark:text-white">Application Details</h2>
+        <StatusBadge status={application.status} currentLevel={application.currentLevel} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Ticket Number</h3>
-            <p className="mt-1 text-lg font-semibold dark:text-white">{application.ticketNo}</p>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Ticket Number</h3>
+            <p className="mt-1 text-lg font-bold dark:text-white">{application.ticketNo}</p>
           </div>
-          
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Current Level</h3>
-            <p className="mt-1 dark:text-gray-300">{application.currentLevel}</p>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Current Level</h3>
+            <p className="mt-1 text-base dark:text-gray-300">{application.currentLevel.replace('IT', 'IT ').replace('Employee', 'Employee').toUpperCase()}</p>
           </div>
-
           <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Submission Date</h3>
-            <p className="mt-1 dark:text-gray-300">{formatDate(application.createdAt)}</p>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Submission Date</h3>
+            <p className="mt-1 text-base dark:text-gray-300">{formatDate(application.createdAt)}</p>
           </div>
         </div>
-
         <div className="space-y-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Employee Details</h3>
-            <p className="mt-1 dark:text-gray-300">{application.employeeName}</p>
-            <p className="dark:text-gray-300">Employee Code: {application.employeeCode}</p>
-            <p className="dark:text-gray-300">Designation: {application.designation}</p>
+          <div className="bg-gray-50 dark:bg-gray-800/60 rounded-lg p-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Employee Details</h3>
+            <p className="font-medium dark:text-white">{application.employeeName}</p>
+            <p className="text-sm dark:text-gray-300">Employee Code: {application.employeeCode}</p>
+            <p className="text-sm dark:text-gray-300">Designation: {application.designation}</p>
           </div>
-
-          <div>
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Contact Information</h3>
-            <p className="mt-1 dark:text-gray-300">Email: {application.email}</p>
-            <p className="dark:text-gray-300">Mobile: {application.mobile}</p>
+          <div className="bg-gray-50 dark:bg-gray-800/60 rounded-lg p-4">
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Contact Information</h3>
+            <p className="text-sm dark:text-gray-300">Email: {application.email}</p>
+            <p className="text-sm dark:text-gray-300">Mobile: {application.mobile}</p>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Nature of Request</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Nature of Request</h3>
+          <div className="flex flex-wrap gap-2">
             {application.natureOfRequest.map((item, index) => (
               <span
                 key={index}
@@ -95,10 +97,9 @@ const ApplicationDetails = ({ application }) => {
             ))}
           </div>
         </div>
-
         <div>
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Source System</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Source System</h3>
+          <div className="flex flex-wrap gap-2">
             {application.sourceSystem.map((item, index) => (
               <span
                 key={index}
@@ -109,14 +110,14 @@ const ApplicationDetails = ({ application }) => {
             ))}
           </div>
         </div>
-
-        {application.remarks && (
-          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">Remarks</h3>
-            <p className="mt-1 text-gray-800 dark:text-gray-200">{application.remarks}</p>
-          </div>
-        )}
       </div>
+
+      {application.remarks && (
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/40 rounded-lg border border-red-200 dark:border-red-700">
+          <h3 className="text-xs font-semibold text-red-600 dark:text-red-300 uppercase tracking-wide mb-1">Remarks</h3>
+          <p className="text-gray-800 dark:text-gray-200">{application.remarks}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -148,18 +149,18 @@ const TrackStatus = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8 dark:text-white">
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold text-center mb-8 dark:text-white tracking-tight">
         Track Application Status
       </h1>
       
       <div className="mb-8">
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-          <div className="relative">
+          <div className="relative flex items-center">
             <input
               type="text"
-              placeholder="Enter Ticket No. "
-              className="form-input pl-12 pr-4 py-3 w-full "
+              placeholder="Enter Ticket No. or Email ID"
+              className="form-input pl-12 pr-4 py-3 w-full rounded-full bg-white/80 dark:bg-gray-800/70 border-none shadow focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 transition text-gray-800 dark:text-white backdrop-blur-md"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
@@ -167,10 +168,10 @@ const TrackStatus = () => {
               }}
               disabled={loading}
             />
-        
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 dark:text-blue-300" size={22} />
             <button
               type="submit"
-              className="absolute  top-1/2 transform -translate-y-1/2 btn-primary py-1"
+              className="ml-4 rounded-full px-6 py-2 bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
             >
               {loading ? 'Searching...' : 'Track'}
@@ -179,14 +180,18 @@ const TrackStatus = () => {
         </form>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg flex items-center">
+          <div className="mt-4 p-4 bg-red-100/80 dark:bg-red-900/70 text-red-700 dark:text-red-300 rounded-xl shadow-lg backdrop-blur-md flex items-center">
             <AlertCircle className="mr-2" size={20} />
             {error}
           </div>
         )}
       </div>
 
-      {application && <ApplicationDetails application={application} />}
+      {application && (
+        <div className="backdrop-blur-lg bg-white/60 dark:bg-gray-900/70 border border-white/40 dark:border-gray-700 rounded-2xl shadow-xl p-8">
+          <ApplicationDetails application={application} />
+        </div>
+      )}
     </div>
   )
 }

@@ -12,9 +12,20 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['CMO', 'NodalOfficer', 'Commissioner'],
+    enum: ['Employee', 'ITAssistant', 'ITOfficer', 'ITHead'],
     required: true
-  }
+  },
+  userId: {
+    type: String,
+    required: false
+  },
+  ulbCode: String,
+  employeeName: String,
+  employeeCode: String,
+  designation: String,
+  mobile: String,
+  email: String,
+  section: String
 });
 
 export default mongoose.model('User', userSchema);
