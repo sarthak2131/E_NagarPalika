@@ -108,41 +108,50 @@ router.get('/track', async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const { action, remarks } = req.body;
+    const { action, remarks, level } = req.body;
     const { role, username } = req.user;
     const application = await Application.findById(id);
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
-    // Approval logic for ITAssistant, ITOfficer, ITHead
+    // Stepwise approval logic
     let updateData = { $set: {}, $push: { previousLevels: role } };
     if (action === 'approve') {
-      if (role === 'ITHead' && (application.status === 'pending' || application.status === 'approved')) {
-        // ITHead can approve at any stage
-        updateData.$set.ITAssistantApproved = true;
-        updateData.$set.ITOfficerApproved = true;
-        updateData.$set.ITHeadApproved = true;
-        updateData.$set.ITHeadApprovedBy = username;
-        updateData.$set.currentLevel = 'Completed';
-        updateData.$set.status = 'approved';
-        updateData.$set.statusMessage = 'Final Approved by ITHead';
-      } else if (role === 'ITOfficer' && application.status === 'pending' && (application.currentLevel === 'ITAssistant' || application.currentLevel === 'ITOfficer')) {
-        // ITOfficer can approve at ITAssistant or ITOfficer stage
-        updateData.$set.ITAssistantApproved = true;
-        updateData.$set.ITOfficerApproved = true;
-        updateData.$set.ITOfficerApprovedBy = username;
-        updateData.$set.currentLevel = 'ITHead';
-        updateData.$set.status = 'pending';
-        updateData.$set.statusMessage = 'Forwarded to ITHead';
-      } else if (role === 'ITAssistant' && application.status === 'pending' && application.currentLevel === 'ITAssistant') {
-        // ITAssistant can approve only at their own stage
+      if (level === 'ITAssistant') {
+        if (application.ITAssistantApproved) {
+          return res.status(400).json({ message: 'Already approved as IT Assistant' });
+        }
         updateData.$set.ITAssistantApproved = true;
         updateData.$set.ITAssistantApprovedBy = username;
         updateData.$set.currentLevel = 'ITOfficer';
         updateData.$set.status = 'approved';
         updateData.$set.statusMessage = 'Forwarded to ITOfficer';
+      } else if (level === 'ITOfficer') {
+        if (!application.ITAssistantApproved) {
+          return res.status(400).json({ message: 'IT Assistant approval required first' });
+        }
+        if (application.ITOfficerApproved) {
+          return res.status(400).json({ message: 'Already approved as IT Officer' });
+        }
+        updateData.$set.ITOfficerApproved = true;
+        updateData.$set.ITOfficerApprovedBy = username;
+        updateData.$set.currentLevel = 'ITHead';
+        updateData.$set.status = 'approved';
+        updateData.$set.statusMessage = 'Forwarded to ITHead';
+      } else if (level === 'ITHead') {
+        if (!application.ITAssistantApproved || !application.ITOfficerApproved) {
+          return res.status(400).json({ message: 'IT Assistant and IT Officer approval required first' });
+        }
+        if (application.ITHeadApproved) {
+          return res.status(400).json({ message: 'Already approved as IT Head' });
+        }
+        updateData.$set.ITHeadApproved = true;
+        updateData.$set.ITHeadApprovedBy = username;
+        updateData.$set.currentLevel = 'Completed';
+        updateData.$set.status = 'approved';
+        updateData.$set.statusMessage = 'Final Approved by ITHead';
       } else {
-        return res.status(403).json({ message: 'You are not authorized to approve at this level' });
+        return res.status(400).json({ message: 'Invalid approval level' });
       }
     } else if (action === 'reject') {
       updateData.$set = {
@@ -165,6 +174,20 @@ router.put('/:id', auth, async (req, res) => {
   } catch (error) {
     console.error('Error updating application:', error);
     res.status(500).json({ message: 'Server error updating application', error: error.message });
+  }
+});
+
+// Get single application by ID
+router.get('/:id', auth, async (req, res) => {
+  try {
+    const application = await Application.findById(req.params.id);
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+    res.json(application);
+  } catch (error) {
+    console.error('Error fetching application by ID:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 

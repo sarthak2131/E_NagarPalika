@@ -10,6 +10,7 @@ export const endpoints = {
     getAll: `${API_URL}/applications`,
     track: `${API_URL}/applications/track`,
     update: (id) => `${API_URL}/applications/${id}`,
+    getById: (id) => `${API_URL}/applications/${id}`,
   },
 };
 

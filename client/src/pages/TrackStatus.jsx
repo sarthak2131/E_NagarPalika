@@ -13,27 +13,28 @@ const StatusBadge = ({ status, currentLevel }) => {
       </span>
     )
   }
-  const statusConfig = {
-    pending: {
-      color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
-      icon: <Clock size={16} className="mr-1" />
-    },
-    approved: {
-      color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-      icon: <CheckCircle size={16} className="mr-1" />
-    },
-    rejected: {
-      color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
-      icon: <XCircle size={16} className="mr-1" />
-    }
+  let displayStatus = status;
+  let color = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300';
+  let icon = <Clock size={16} className="mr-1" />;
+  if (status === 'approved' && currentLevel !== 'Completed') {
+    displayStatus = 'Partially Approved';
+    color = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    icon = <CheckCircle size={16} className="mr-1" />;
+  } else if (status === 'approved' && currentLevel === 'Completed') {
+    displayStatus = 'Approved';
+    color = 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+    icon = <CheckCircle size={16} className="mr-1" />;
+  } else if (status === 'rejected') {
+    displayStatus = 'Rejected';
+    color = 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300';
+    icon = <XCircle size={16} className="mr-1" />;
   }
-  const config = statusConfig[status] || statusConfig.pending
   return (
-    <span className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
-      {config.icon}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+    <span className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${color}`}>
+      {icon}
+      {displayStatus}
     </span>
-  )
+  );
 }
 
 const ApplicationDetails = ({ application }) => {
