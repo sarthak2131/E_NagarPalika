@@ -158,35 +158,42 @@ const TrackStatus = () => {
         Track Application Status
       </h1>
       
-      <div className="mb-8">
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-          <div className="relative flex items-center">
+      <div className="mb-8 flex justify-center">
+        <form onSubmit={handleSearch} className="w-full max-w-xl">
+          <div className="flex items-center bg-white/90 dark:bg-gray-800/90 rounded-2xl shadow-lg px-4 py-2 border border-blue-100 dark:border-gray-800">
             <input
               type="text"
               placeholder="Enter Ticket No. or Email ID"
-              className="form-input pl-12 pr-4 py-3 w-full rounded-full bg-white/80 dark:bg-gray-800/70 border-none shadow focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 transition text-gray-800 dark:text-white backdrop-blur-md"
+              className="flex-1 bg-transparent border-none outline-none text-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 px-2 py-3"
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
                 setError('')
               }}
               disabled={loading}
+              autoComplete="off"
             />
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-500 dark:text-blue-300" size={22} />
             <button
               type="submit"
-              className="ml-4 rounded-full px-6 py-2 bg-blue-600 text-white font-semibold shadow hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-400 dark:focus:ring-blue-600 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="ml-2 flex items-center justify-center w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow transition disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={loading}
+              aria-label="Track"
             >
-              {loading ? 'Searching...' : 'Track'}
+              {loading ? (
+                <Search className="animate-spin" size={24} />
+              ) : (
+                <Search size={24} />
+              )}
             </button>
           </div>
         </form>
-
-        {error && (
-          null
-        )}
       </div>
+
+      {error && (
+        <div className="text-center text-red-500 mt-4">
+          {error}
+        </div>
+      )}
 
       {application && (
         <div className="backdrop-blur-lg bg-white/60 dark:bg-gray-900/70 border border-white/40 dark:border-gray-700 rounded-2xl shadow-xl p-8">
