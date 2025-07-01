@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import axios from 'axios'
 import { Search, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import { endpoints } from '../config/api'
+import toast from 'react-hot-toast'
 
 const StatusBadge = ({ status, currentLevel }) => {
   if (status === 'pending' && ['ITAssistant', 'ITOfficer', 'ITHead'].includes(currentLevel)) {
@@ -131,6 +132,7 @@ const TrackStatus = () => {
   const handleSearch = async (e) => {
     e.preventDefault()
     if (!searchQuery.trim()) {
+      toast.error('Please enter a Ticket No. or Email ID')
       setError('Please enter a Ticket No. or Email ID')
       return
     }
@@ -140,7 +142,9 @@ const TrackStatus = () => {
     try {
       const response = await axios.get(`${endpoints.applications.track}?query=${searchQuery}`)
       setApplication(response.data)
+      toast.success('Application found!')
     } catch (error) {
+      toast.error('Application not found. Please check the Ticket No. or Email ID')
       setError('Application not found. Please check the Ticket No. or Email ID')
       setApplication(null)
     } finally {
@@ -180,10 +184,7 @@ const TrackStatus = () => {
         </form>
 
         {error && (
-          <div className="mt-4 p-4 bg-red-100/80 dark:bg-red-900/70 text-red-700 dark:text-red-300 rounded-xl shadow-lg backdrop-blur-md flex items-center">
-            <AlertCircle className="mr-2" size={20} />
-            {error}
-          </div>
+          null
         )}
       </div>
 

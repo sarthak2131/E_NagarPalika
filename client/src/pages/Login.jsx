@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { endpoints } from '../config/api';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -46,12 +47,15 @@ const Login = () => {
             localStorage.removeItem('employeename');
           }
         }
+        toast.success('Login successful!');
         navigate('/dashboard');
       } else {
+        toast.error('Login failed. Please check your credentials.');
         setError('Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error('Login error:', error);
+      toast.error(error.response?.data?.message || 'Login failed. Please try again.');
       setError(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -67,9 +71,7 @@ const Login = () => {
         </h2>
         <p className="text-gray-600 dark:text-gray-300 mb-6 text-center">Sign in to access your dashboard</p>
         {error && (
-          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg w-full text-center">
-            {error}
-          </div>
+          null
         )}
         <form onSubmit={handleSubmit} className="space-y-6 w-full">
           <div>

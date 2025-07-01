@@ -3,6 +3,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { Loader2, Search, Filter, Eye, CheckCircle, XCircle, Clock, ListChecks, FileText } from 'lucide-react'
 import { endpoints } from '../config/api'
+import toast from 'react-hot-toast'
 
 const summaryColors = {
   total: 'bg-gradient-to-r from-blue-400 to-blue-600',
@@ -319,13 +320,11 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error fetching applications:', error)
       if (error.response?.status === 401) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('role')
-        localStorage.removeItem('username')
-        navigate('/login')
+        toast.error('Session expired. Please login again.');
       } else {
-        setError('Failed to fetch applications. Please try again.')
+        toast.error('Failed to fetch applications. Please try again.');
       }
+      setError('Failed to fetch applications. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -339,15 +338,13 @@ const Dashboard = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       await fetchApplications()
+      toast.success('Application status updated!');
     } catch (error) {
       console.error('Error updating application:', error)
       if (error.response?.status === 401) {
-        localStorage.removeItem('token')
-        localStorage.removeItem('role')
-        localStorage.removeItem('username')
-        navigate('/login')
+        toast.error('Session expired. Please login again.');
       } else {
-        alert('Error updating application status')
+        toast.error('Error updating application status');
       }
     }
   }
@@ -358,6 +355,11 @@ const Dashboard = () => {
   }
 
   const handleRejectSubmit = (remarks) => {
+    if (!remarks.trim()) {
+      toast.error('Please provide rejection remarks');
+      setError('Please provide rejection remarks')
+      return
+    }
     handleAction(rejectingApplicationId, 'reject', remarks)
     setShowRejectModal(false)
     setRejectingApplicationId(null)
@@ -438,7 +440,7 @@ const Dashboard = () => {
             <Loader2 className="animate-spin text-blue-600 dark:text-blue-300" size={40} />
           </div>
         ) : error ? (
-          <div className="text-center text-red-600 dark:text-red-400 py-8">{error}</div>
+          null
         ) : filteredApps.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-8">No applications found.</div>
         ) : (

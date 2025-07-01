@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { endpoints } from '../config/api';
+import toast from 'react-hot-toast';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -19,7 +20,10 @@ const Profile = () => {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => setUser(res.data))
-      .catch(() => setError('Failed to load profile'))
+      .catch(() => {
+        toast.error('Failed to load profile');
+        setError('Failed to load profile');
+      })
       .finally(() => setLoading(false));
   }, [navigate]);
 
@@ -32,11 +36,7 @@ const Profile = () => {
   }
 
   if (error) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <span className="text-lg text-red-600 dark:text-red-400">{error}</span>
-      </div>
-    );
+    return null;
   }
 
   return (

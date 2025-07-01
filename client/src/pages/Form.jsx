@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { endpoints } from '../config/api'
 import { useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 const SuccessModal = ({ ticketNo, onClose }) => {
   return (
@@ -136,6 +137,7 @@ const Form = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) {
+      toast.error('Please fix the errors in the form.')
       return
     }
     setIsSubmitting(true)
@@ -151,6 +153,7 @@ const Form = () => {
         }
       )
       setSubmissionSuccess(response.data.ticketNo)
+      toast.success('Application submitted successfully!')
       setFormData({
         ticketNo: '',
         date: new Date().toISOString().split('T')[0],
@@ -168,6 +171,7 @@ const Form = () => {
       })
     } catch (error) {
       console.error('Error submitting form:', error)
+      toast.error('Error submitting form. Please try again.')
       setErrors({ submit: 'Error submitting form. Please try again.' })
     } finally {
       setIsSubmitting(false)
@@ -197,9 +201,7 @@ const Form = () => {
       </h1>
 
       {errors.submit && (
-        <div className="mb-4 p-4 bg-red-100/80 dark:bg-red-900/70 text-red-700 dark:text-red-200 rounded-xl shadow-lg backdrop-blur-md">
-          {errors.submit}
-        </div>
+        null
       )}
 
       <form onSubmit={handleSubmit} className="space-y-10 backdrop-blur-lg bg-white/60 dark:bg-gray-900/70 border border-white/40 dark:border-gray-700 p-8 rounded-2xl shadow-xl">
