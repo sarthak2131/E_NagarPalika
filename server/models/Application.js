@@ -44,16 +44,19 @@ const applicationSchema = new mongoose.Schema({
     default: false
   },
   ITAssistantApprovedBy: String,
+  ITAssistantRejectedBy: String,
   ITOfficerApproved: {
     type: Boolean,
     default: false
   },
   ITOfficerApprovedBy: String,
+  ITOfficerRejectedBy: String,
   ITHeadApproved: {
     type: Boolean,
     default: false
   },
   ITHeadApprovedBy: String,
+  ITHeadRejectedBy: String,
   remarks: String,
   createdAt: {
     type: Date,

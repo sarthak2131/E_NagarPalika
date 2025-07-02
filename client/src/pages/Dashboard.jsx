@@ -195,10 +195,22 @@ const ViewModal = ({ application, onClose, userRole }) => {
                 if (isApproved(application, level)) {
                   const approver = application[`${level}ApprovedBy`];
                   if (!approver) approverLabel = 'N/A';
-                  else if (approver.includes('ithead')) approverLabel = 'IT Head';
-                  else if (approver.includes('itofficer')) approverLabel = 'IT Officer';
-                  else if (approver.includes('itassistant')) approverLabel = 'IT Assistant';
+                  else if (approver.toLowerCase().includes('ithead')) approverLabel = 'IT Head';
+                  else if (approver.toLowerCase().includes('itofficer')) approverLabel = 'IT Officer';
+                  else if (approver.toLowerCase().includes('itassistant')) approverLabel = 'IT Assistant';
                   else approverLabel = approver;
+                }
+                // Rejected by logic (always show if rejected at this level)
+                let rejectedByLabel = '';
+                let rejectedBy = '';
+                if (level === 'ITAssistant') rejectedBy = application.ITAssistantRejectedBy;
+                if (level === 'ITOfficer') rejectedBy = application.ITOfficerRejectedBy;
+                if (level === 'ITHead') rejectedBy = application.ITHeadRejectedBy;
+                if (rejectedBy) {
+                  if (rejectedBy.toLowerCase().includes('ithead')) rejectedByLabel = 'IT Head';
+                  else if (rejectedBy.toLowerCase().includes('itofficer')) rejectedByLabel = 'IT Officer';
+                  else if (rejectedBy.toLowerCase().includes('itassistant')) rejectedByLabel = 'IT Assistant';
+                  else rejectedByLabel = rejectedBy;
                 }
                 return (
                   <div key={level} className="flex items-center justify-between space-x-2">
@@ -224,41 +236,46 @@ const ViewModal = ({ application, onClose, userRole }) => {
                           Approved by {approverLabel}
                         </span>
                       )}
+                      {/* Always show rejected by label if rejected at this level */}
+                      {rejectedByLabel && (
+                        <span className="ml-2 text-xs text-red-700 dark:text-red-400 italic">
+                          Rejected by {rejectedByLabel}
+                        </span>
+                      )}
                     </div>
-                    {/* Approve button right-aligned */}
-                    {userRole && approvalLevels.includes(level) && application.status !== 'rejected' && application.currentLevel !== 'Completed' && (
-                      <button
-                        onClick={() => {
-                          window.handleAction && window.handleAction(application._id, 'approve', '', level);
-                        }}
-                        className={`ml-4 w-44 h-10 px-0 py-0 rounded-full font-semibold shadow text-sm transition text-center flex items-center justify-center
-                          ${canApprove(application, level) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
-                        `}
-                        disabled={!canApprove(application, level)}
-                      >
-                        Approve as {level.replace('IT', 'IT ')}
-                      </button>
+                    {/* Approve/Reject buttons for IT roles only, not Employee */}
+                    {userRole && userRole !== 'Employee' && approvalLevels.includes(level) && application.status !== 'rejected' && application.currentLevel !== 'Completed' && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            window.handleAction && window.handleAction(application._id, 'approve', '', level);
+                          }}
+                          className={`w-28 h-10 px-0 py-0 rounded-full font-semibold shadow text-sm transition text-center flex items-center justify-center
+                            ${canApprove(application, level) ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
+                          `}
+                          disabled={!canApprove(application, level)}
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => {
+                            onClose();
+                            window.handleReject && window.handleReject(application._id, level);
+                          }}
+                          className={`w-28 h-10 px-0 py-0 rounded-full font-semibold shadow text-sm transition text-center flex items-center justify-center
+                            ${canApprove(application, level) ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}
+                          `}
+                          disabled={!canApprove(application, level)}
+                        >
+                          Reject
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
               })}
             </div>
           </div>
-
-          {/* Reject Button at the bottom */}
-          {userRole && userRole !== 'Employee' && application.status !== 'rejected' && application.currentLevel !== 'Completed' && (
-            <div className="flex justify-end gap-4 mt-6">
-              <button
-                onClick={() => {
-                  onClose();
-                  window.handleReject && window.handleReject(application._id);
-                }}
-                className="px-6 py-2 rounded-full bg-red-600 text-white font-semibold shadow hover:bg-red-700 transition"
-              >
-                Reject
-              </button>
-            </div>
-          )}
 
           {/* Remarks */}
           {application.remarks && (
@@ -343,6 +360,7 @@ const Dashboard = () => {
   const [selectedApplication, setSelectedApplication] = useState(null)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectingApplicationId, setRejectingApplicationId] = useState(null)
+  const [rejectingLevel, setRejectingLevel] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [selectedDate, setSelectedDate] = useState(null);
@@ -411,8 +429,9 @@ const Dashboard = () => {
     }
   }
 
-  const handleReject = (id) => {
+  const handleReject = (id, level) => {
     setRejectingApplicationId(id)
+    setRejectingLevel(level)
     setShowRejectModal(true)
   }
 
@@ -422,9 +441,10 @@ const Dashboard = () => {
       setError('Please provide rejection remarks')
       return
     }
-    handleAction(rejectingApplicationId, 'reject', remarks)
+    handleAction(rejectingApplicationId, 'reject', remarks, rejectingLevel)
     setShowRejectModal(false)
     setRejectingApplicationId(null)
+    setRejectingLevel(null)
   }
 
   // Summary counts
@@ -615,6 +635,7 @@ const Dashboard = () => {
           onClose={() => {
             setShowRejectModal(false)
             setRejectingApplicationId(null)
+            setRejectingLevel(null)
           }}
         />
       )}

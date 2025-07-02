@@ -159,6 +159,14 @@ router.put('/:id', auth, async (req, res) => {
         currentLevel: 'Completed',
         remarks: remarks || 'Application rejected'
       };
+      // Set rejected by field for the level
+      if (level === 'ITAssistant') {
+        updateData.$set.ITAssistantRejectedBy = username;
+      } else if (level === 'ITOfficer') {
+        updateData.$set.ITOfficerRejectedBy = username;
+      } else if (level === 'ITHead') {
+        updateData.$set.ITHeadRejectedBy = username;
+      }
     }
     const updatedApplication = await Application.findByIdAndUpdate(
       id,
