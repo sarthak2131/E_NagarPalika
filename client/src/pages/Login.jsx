@@ -63,7 +63,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-[100vh] flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-[100vh] flex items-center justify-center">
       <div className="backdrop-blur-lg bg-white/70 dark:bg-gray-900/70 rounded-3xl shadow-2xl p-10 md:p-14 flex flex-col items-center w-full max-w-md mx-4">
         <AnimatedLogo />
         <h2 className="text-3xl font-extrabold text-gray-800 dark:text-white mt-6 mb-2 tracking-tight text-center">

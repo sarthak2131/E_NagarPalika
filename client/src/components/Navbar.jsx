@@ -81,13 +81,14 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full">
-      <div className="backdrop-blur-lg bg-white/70 dark:bg-gray-900/70 shadow-xl rounded-b-2xl mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-2">
+    <nav className="sticky top-0 z-50 w-full bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center space-x-4">
             <Link to="/" className="flex items-center space-x-2">
-              <AnimatedLogo />
-              <span className="text-2xl font-bold text-blue-700 dark:text-blue-300 tracking-wide">Nagarpalika</span>
+              {/* <AnimatedLogo /> */}
+              {/* <img src="/image.png" alt="Logo" className="w-10 h-10 rounded-full object-cover" /> */}
+              <span className="text-2xl font-bold text-blue-700 dark:text-blue-300 tracking-wide">ई-Nagarpalika</span>
             </Link>
             <ThemeToggle />
           </div>
@@ -196,13 +197,14 @@ const Navbar = () => {
   );
 };
 
-const AnimatedLogo = () => (
-  <svg className="w-10 h-10 animate-pulse" viewBox="0 0 100 100" fill="none">
-    <circle cx="50" cy="50" r="40" fill="#2563eb" fillOpacity="0.15" />
-    <circle cx="50" cy="50" r="28" fill="#2563eb" fillOpacity="0.25" />
-    <circle cx="50" cy="50" r="16" fill="#2563eb" />
-    <text x="50" y="57" textAnchor="middle" fontSize="2.5rem" fill="#fff" fontWeight="bold">ई</text>
-  </svg>
-)
+// Comment out the AnimatedLogo component at the bottom
+// const AnimatedLogo = () => (
+//   <svg className="w-10 h-10 animate-pulse" viewBox="0 0 100 100" fill="none">
+//     <circle cx="50" cy="50" r="40" fill="#2563eb" fillOpacity="0.15" />
+//     <circle cx="50" cy="50" r="28" fill="#2563eb" fillOpacity="0.25" />
+//     <circle cx="50" cy="50" r="16" fill="#2563eb" />
+//     <text x="50" y="57" textAnchor="middle" fontSize="2.5rem" fill="#fff" fontWeight="bold">ई</text>
+//   </svg>
+// )
 
 export default Navbar;

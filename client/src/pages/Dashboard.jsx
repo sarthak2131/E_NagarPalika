@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { Loader2, Search, Filter, Eye, CheckCircle, XCircle, Clock, ListChecks, FileText } from 'lucide-react'
@@ -72,6 +72,18 @@ const canApprove = (application, level) => {
 
 // View Application Modal
 const ViewModal = ({ application, onClose, userRole }) => {
+  const modalRef = useRef(null);
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    if (modalRef.current) {
+      modalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   if (!application) return null
 
   // Approval levels for each role
@@ -81,7 +93,7 @@ const ViewModal = ({ application, onClose, userRole }) => {
   if (userRole === 'ITHead') approvalLevels = ['ITAssistant', 'ITOfficer', 'ITHead'];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div ref={modalRef} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold dark:text-white">Application Details</h2>
@@ -509,7 +521,7 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-700 dark:text-gray-200">Select Date:</span>
+            <span className="font-semibold text-lg text-black dark:text-white">Select Date:</span>
             <DatePicker
               selected={selectedDate}
               onChange={date => setSelectedDate(date)}
@@ -583,7 +595,7 @@ const Dashboard = () => {
           <ul className="divide-y divide-gray-200 dark:divide-gray-800">
             {filteredApps.map(app => (
               <li key={app._id} 
-                className="flex flex-col md:flex-row md:items-center justify-between py-6 gap-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-800/60 rounded-xl transition"
+                className="p-4 flex flex-col md:flex-row md:items-center justify-between py-6 gap-4 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-800/60 rounded-xl transition"
                 onClick={() => setSelectedApplication(app)}
               >
                 <div className="flex items-center gap-4">

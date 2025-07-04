@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom'
 
 const Home = () => {
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-blue-100 via-white to-blue-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="backdrop-blur-lg bg-white/70 dark:bg-gray-900/70 rounded-3xl shadow-2xl p-10 md:p-16 flex flex-col items-center max-w-2xl w-full mx-4">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center relative">
+      <img src="/premium_photo-1697730395452-e90ac9269968.jpg" alt="Background" className="absolute inset-0 w-full h-full object-cover z-0" style={{filter: 'brightness(0.7)'}} />
+      <div className="absolute inset-0 bg-white/40 dark:bg-gray-900/60 z-10" />
+      <div className="relative z-20 backdrop-blur-lg rounded-3xl shadow-2xl p-10 md:p-16 flex flex-col items-center max-w-2xl w-full mx-4">
         <div className="mb-8 flex flex-col items-center">
-          <AnimatedIcon />
+          <img src="/image.png" alt="Logo" className="w-24 h-24 object-cover mb-3 rounded-full border-4 border-white dark:border-gray-800" />
           <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white mt-6 mb-2 tracking-tight text-center">
             ई-Nagarpalika
           </h1>
@@ -38,14 +40,5 @@ const Home = () => {
     </div>
   )
 }
-
-const AnimatedIcon = () => (
-  <svg className="w-20 h-20 animate-pulse" viewBox="0 0 100 100" fill="none">
-    <circle cx="50" cy="50" r="40" fill="#2563eb" fillOpacity="0.15" />
-    <circle cx="50" cy="50" r="28" fill="#2563eb" fillOpacity="0.25" />
-    <circle cx="50" cy="50" r="16" fill="#2563eb" />
-    <text x="50" y="57" textAnchor="middle" fontSize="2.5rem" fill="#fff" fontWeight="bold">ई</text>
-  </svg>
-)
 
 export default Home
